@@ -5,40 +5,130 @@ class ConnectFour:
     The cells will contain either 0 (empty), 1 (player 1's token) or 2 (player 2's token).
     """
 
-    def __init__(self):
+    def __init__(self, turn=None, last=None, empty=None, ps1=None, ps2=None):
+
         """ initializing board and tracking turns"""
         self.board = [[0 for i in range(7)] for i in range(6)]
-        self.turn = 1
+        self.turn = turn if turn else 1
+        self.last = last
+        if empty:
+            self.empty = empty
+        else:
+            self.empty = set()
+            for y, row in enumerate(self.board[::1]):
+                for x, cell in enumerate(row):
+                    if cell == 0:
+                        self.empty.add((x, y))
+        self.ps1 = ps1 if ps1 else set()
+        self.ps2 = ps2 if ps2 else set()
 
     def print_board(self):
-        """Printing the current position of the board as a matrix"""
-        print("")
-        for i in self.board:
-            print(i)
-        print("")
+        """
+        Pretty prints the current board.
+        If a player has won, outlines the winning 4.
+        """
+        # print("")
+        # for row in self.board:
+        #     print(row)
+        # print("")
+        print()
+
+        win_coords = set()
+        for player in [1, 2]:
+            ps = {(x, y) for y, row in enumerate(self.board)
+                for x, cell in enumerate(row) if cell == player}
+            for x, y in ps:
+                win_patterns = [
+                    [(1, 1), (2, 2), (3, 3)],
+                    [(1, 0), (2, 0), (3, 0)],
+                    [(0, 1), (0, 2), (0, 3)],
+                    [(-1, 1), (-2, 2), (-3, 3)]
+                ]
+                for pattern in win_patterns:
+                    coords = [(x + dx, y + dy) for dx, dy in pattern]
+                    if all(c in ps for c in coords):
+                        win_coords = set([(x, y)] + coords)
+                        break
+                if win_coords:
+                    break
+            if win_coords:
+                break
+
+        print("  " + " ".join(f" {i+1} " for i in range(len(self.board[0]))))
+        print(" +" + "---+" * len(self.board[0]))
+
+        for y, row in enumerate(self.board):
+            row_str = " |"
+            for x, cell in enumerate(row):
+                cell_char = self._cell_repr(cell)
+                if (x, y) in win_coords:
+                    cell_char = f"[{cell_char}]"
+                else:
+                    cell_char = f" {cell_char} "
+                row_str += cell_char + "|"
+            print(row_str)
+            print(" +" + "---+" * len(self.board[0]))
+        print()
+
+    def _cell_repr(self, cell):
+        """Helper to visualize a cell: 0=empty, 1=player, 2=opponent."""
+        if cell == 0:
+            return " "
+        if cell == 1:
+            return "X"
+        return "O"
 
     def make_move(self, col):
         """ Makes a move for the player whose move it is with a given column parameter"""
         if self.board[0][col] != 0:
             raise ValueError
-        for i in self.board[::-1]:
-            if i[col] == 0:
-                i[col] = self.turn
+        for y, row in enumerate(self.board[::-1]):
+            if row[col] == 0:
+                row[col] = self.turn
+                new = (col, y)
+                if self.turn == 1:
+                    self.ps1.add(new)
+                else:
+                    self.ps2.add(new)
                 self.turn = self.turn % 2 + 1
+                self.last = new
+                self.empty.remove(new)
                 break
 
-    def return_board(self):
-        """ Function for the giving part when cloning a game"""
-        return [row[:] for row in self.board]
+    def clone(self):
+        """Return a deep clone of the game state."""
+        return (
+            [row[:] for row in self.board],
+            self.turn,
+            self.last,
+            self.empty.copy(),
+            self.ps1.copy(),
+            self.ps2.copy()
+        )
 
     def insert_position(self, board):
         """ Function for the receiving part when cloning a game"""
-        self.board = board.return_board()
+        self.board, self.turn, self.last, self.empty, self.ps1, self.ps2 = board.clone()
 
     def valid_moves(self):
         """ Returns a list of valid moves to choose from"""
-        moves = [idx for idx, val in enumerate(self.board[0]) if val == 0]
+        moves = [x for x, val in enumerate(self.board[0]) if val == 0]
         return moves
+
+    def valid_concrete_moves(self):
+        """
+        Returns a list of (row, col) coordinates where a move can be made.
+        """
+        coords = []
+        for col in range(len(self.board[0])):
+            for row in range(len(self.board)):
+                if self.board[row][col] != 0:
+                    if row > 0:
+                        coords.append((5 - (row - 5), col))
+                    break
+            else:
+                coords.append((5 - (len(self.board) - 1), col))
+        return coords
 
     def check_win_helper(self, ps):
         """ Checks win for a given side.
@@ -86,7 +176,13 @@ class ConnectFour:
                         value = 0
                     elif is_blocked(new) or is_blocked(prev):
                         value //= 2
-                    break
+                    elif new in self.valid_concrete_moves() and prev in self.valid_concrete_moves():
+                        if value == 4:
+                            value = float("inf")
+                        else:
+                            value *= 3
+                    elif new in self.valid_concrete_moves() or prev in self.valid_concrete_moves():
+                        value *= 2
                 value += 2
         return value
 
@@ -98,9 +194,9 @@ class ConnectFour:
                for x, cell in enumerate(row) if cell == 2}
 
         if self.check_win_helper(ps1):
-            return 10000
+            return float("inf")
         if self.check_win_helper(ps2):
-            return -10000
+            return float("-inf")
 
         heuristic_value = 0
         directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
