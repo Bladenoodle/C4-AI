@@ -28,8 +28,8 @@ def minimax(
         best_move = None
 
         for move in game.valid_moves():
-            game_copy = ConnectFour(game.turn)
-            game_copy.insert_position(game)
+            game_copy = ConnectFour(turn=game.turn)
+            game_copy.clone_position(game)
             game_copy.make_move(move)
             new_val = minimax(game_copy, depth - 1, False, alpha, beta, original_depth)
             if best_val < new_val:
@@ -40,14 +40,15 @@ def minimax(
                 break
         if depth < original_depth:
             return best_val
+        print(best_val)
         return best_move if best_move else game.valid_moves()[0]
 
     best_val = float("inf")
     best_move = None
 
     for move in game.valid_moves():
-        game_copy = ConnectFour(game.turn)
-        game_copy.insert_position(game)
+        game_copy = ConnectFour(turn=game.turn)
+        game_copy.clone_position(game)
         game_copy.make_move(move)
         new_val = minimax(game_copy, depth - 1, True, alpha, beta, original_depth)
 
@@ -59,4 +60,5 @@ def minimax(
             break
     if depth < original_depth:
         return best_val
+    print(best_val)
     return best_move if best_move else game.valid_moves()[0]

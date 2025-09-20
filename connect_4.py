@@ -5,22 +5,36 @@ class ConnectFour:
     The cells will contain either 0 (empty), 1 (player 1's token) or 2 (player 2's token).
     """
 
-    def __init__(self, turn=None, last=None, empty=None, ps1=None, ps2=None):
-
+    def __init__(self, board=None, turn=None, last=None, empty=None, ps1=None, ps2=None):
         """ initializing board and tracking turns"""
-        self.board = [[0 for i in range(7)] for i in range(6)]
         self.turn = turn if turn else 1
         self.last = last
-        if empty:
-            self.empty = empty
+
+        if board:
+            self.board = board
+            if empty:
+                self.empty = empty
+            else:
+                self.empty = set()
+                for y, row in enumerate(self.board[::-1]):
+                    for x, cell in enumerate(row):
+                        if cell == 0:
+                            self.empty.add((x, y))
+            self.ps1 = ps1 if ps1 else set()
+            self.ps2 = ps2 if ps2 else set()
+
         else:
-            self.empty = set()
-            for y, row in enumerate(self.board[::1]):
-                for x, cell in enumerate(row):
-                    if cell == 0:
-                        self.empty.add((x, y))
-        self.ps1 = ps1 if ps1 else set()
-        self.ps2 = ps2 if ps2 else set()
+            self.board = [[0 for i in range(7)] for i in range(6)]
+            if empty:
+                self.empty = empty
+            else:
+                self.empty = set()
+                for y, row in enumerate(self.board[::-1]):
+                    for x, cell in enumerate(row):
+                        if cell == 0:
+                            self.empty.add((x, y))
+            self.ps1 = ps1 if ps1 else set()
+            self.ps2 = ps2 if ps2 else set()
 
     def print_board(self):
         """
@@ -106,7 +120,7 @@ class ConnectFour:
             self.ps2.copy()
         )
 
-    def insert_position(self, board):
+    def clone_position(self, board):
         """ Function for the receiving part when cloning a game"""
         self.board, self.turn, self.last, self.empty, self.ps1, self.ps2 = board.clone()
 
