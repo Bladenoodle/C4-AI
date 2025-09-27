@@ -1,267 +1,253 @@
-"""Module providing a class ConnectFour"""
+"""Module providing a connect four game and minimax algorithm solving it"""
 
-class ConnectFour:
-    """ A class for connect 4 game, which has 7 rows and 6 columns.
-    The cells will contain either 0 (empty), 1 (player 1's token) or 2 (player 2's token).
+ROWS, COLS = 6, 7
+
+def create_board():
+    return [[0 for _ in range(COLS)] for _ in range(ROWS)]
+
+def check_draw(board):
+    return True if valid_columns(board) is None else False
+
+def print_board(board):
     """
+    Pretty prints the current board.
+    If a player has won, outlines the winning 4.
+    """
+    print()
 
-    def __init__(self, board=None, turn=None, last=None, empty=None, ps1=None, ps2=None):
-        """ initializing board and tracking turns"""
-        self.turn = turn if turn else 1
-        self.last = last
-
-        if board:
-            self.board = board
-            if empty:
-                self.empty = empty
-            else:
-                self.empty = set()
-                for y, row in enumerate(self.board[::-1]):
-                    for x, cell in enumerate(row):
-                        if cell == 0:
-                            self.empty.add((x, y))
-            self.ps1 = ps1 if ps1 else set()
-            self.ps2 = ps2 if ps2 else set()
-
-        else:
-            self.board = [[0 for i in range(7)] for i in range(6)]
-            if empty:
-                self.empty = empty
-            else:
-                self.empty = set()
-                for y, row in enumerate(self.board[::-1]):
-                    for x, cell in enumerate(row):
-                        if cell == 0:
-                            self.empty.add((x, y))
-            self.ps1 = ps1 if ps1 else set()
-            self.ps2 = ps2 if ps2 else set()
-
-    def print_board(self):
-        """
-        Pretty prints the current board.
-        If a player has won, outlines the winning 4.
-        """
-        # print("")
-        # for row in self.board:
-        #     print(row)
-        # print("")
-        print()
-
-        win_coords = set()
-        for player in [1, 2]:
-            ps = {(x, y) for y, row in enumerate(self.board)
-                for x, cell in enumerate(row) if cell == player}
-            for x, y in ps:
-                win_patterns = [
-                    [(1, 1), (2, 2), (3, 3)],
-                    [(1, 0), (2, 0), (3, 0)],
-                    [(0, 1), (0, 2), (0, 3)],
-                    [(-1, 1), (-2, 2), (-3, 3)]
-                ]
-                for pattern in win_patterns:
-                    coords = [(x + dx, y + dy) for dx, dy in pattern]
-                    if all(c in ps for c in coords):
-                        win_coords = set([(x, y)] + coords)
-                        break
-                if win_coords:
+    win_coords = set()
+    for player in [1, 2]:
+        ps = {(x, y) for y, row in enumerate(board)
+            for x, cell in enumerate(row) if cell == player}
+        for x, y in ps:
+            win_patterns = [
+                [(1, 1), (2, 2), (3, 3)],
+                [(1, 0), (2, 0), (3, 0)],
+                [(0, 1), (0, 2), (0, 3)],
+                [(-1, 1), (-2, 2), (-3, 3)]
+            ]
+            for pattern in win_patterns:
+                coords = [(x + dx, y + dy) for dx, dy in pattern]
+                if all(c in ps for c in coords):
+                    win_coords = set([(x, y)] + coords)
                     break
             if win_coords:
                 break
+        if win_coords:
+            break
 
-        print("  " + " ".join(f" {i+1} " for i in range(len(self.board[0]))))
-        print(" +" + "---+" * len(self.board[0]))
+    print("  " + " ".join(f" {i+1} " for i in range(len(board[0]))))
+    print(" +" + "---+" * len(board[0]))
 
-        for y, row in enumerate(self.board):
-            row_str = " |"
-            for x, cell in enumerate(row):
-                cell_char = self._cell_repr(cell)
-                if (x, y) in win_coords:
-                    cell_char = f"[{cell_char}]"
-                else:
-                    cell_char = f" {cell_char} "
-                row_str += cell_char + "|"
-            print(row_str)
-            print(" +" + "---+" * len(self.board[0]))
-        print()
-
-    def _cell_repr(self, cell):
-        """Helper to visualize a cell: 0=empty, 1=player, 2=opponent."""
-        if cell == 0:
-            return " "
-        if cell == 1:
-            return "X"
-        return "O"
-
-    def make_move(self, col):
-        """ Makes a move for the player whose move it is with a given column parameter"""
-        if self.board[0][col] != 0:
-            raise ValueError
-        for y, row in enumerate(self.board[::-1]):
-            if row[col] == 0:
-                row[col] = self.turn
-                new = (col, y)
-                if self.turn == 1:
-                    self.ps1.add(new)
-                else:
-                    self.ps2.add(new)
-                self.turn = self.turn % 2 + 1
-                self.last = new
-                self.empty.remove(new)
-                break
-
-    def clone(self):
-        """Return a deep clone of the game state."""
-        return (
-            [row[:] for row in self.board],
-            self.turn,
-            self.last,
-            self.empty.copy(),
-            self.ps1.copy(),
-            self.ps2.copy()
-        )
-
-    def clone_position(self, board):
-        """ Function for the receiving part when cloning a game"""
-        self.board, self.turn, self.last, self.empty, self.ps1, self.ps2 = board.clone()
-
-    def valid_moves(self):
-        """ Returns a list of valid moves to choose from"""
-        moves = [x for x, val in enumerate(self.board[0]) if val == 0]
-        return moves
-
-    def valid_concrete_moves(self):
-        """
-        Returns a list of (row, col) coordinates where a move can be made.
-        """
-        coords = []
-        for col in range(len(self.board[0])):
-            for row in range(len(self.board)):
-                if self.board[row][col] != 0:
-                    if row > 0:
-                        coords.append((5 - (row - 5), col))
-                    break
+    for y, row in enumerate(board):
+        row_str = " |"
+        for x, cell in enumerate(row):
+            cell_char = cell_repr(cell)
+            if (x, y) in win_coords:
+                cell_char = f"[{cell_char}]"
             else:
-                coords.append((5 - (len(self.board) - 1), col))
-        return coords
+                cell_char = f" {cell_char} "
+            row_str += cell_char + "|"
+        print(row_str)
+        print(" +" + "---+" * len(board[0]))
+    print()
 
-    def check_win_helper(self, ps):
-        """ Checks win for a given side.
-        NEEDS TO BE CALLED BY: check_win OR heuristic.
-        """
-        win_patterns = [
-            [(1, 1), (2, 2), (3, 3)],  # diagonal right-down
-            [(1, 0), (2, 0), (3, 0)],  # horizontal right
-            [(0, 1), (0, 2), (0, 3)],  # vertical down
-            [(-1, 1), (-2, 2), (-3, 3)]  # diagonal left-down
-        ]
-        for x, y in ps:
-            for pattern in win_patterns:
-                if all((x+dx, y+dy) in ps for dx, dy in pattern):
-                    return True
+def cell_repr(cell):
+    """Helper to visualize a cell: 0=empty, 1=player, 2=opponent."""
+    if cell == 0:
+        return " "
+    if cell == 1:
+        return "X"
+    return "O"
+
+def make_move(board, col, player):
+    """Drop a piece into column "col". Returns (x, y) in board indices (top-left origin)."""
+    if not (0 <= col < COLS):
+        raise ValueError("Column out of range")
+    if board[0][col] != 0:
+        raise ValueError("Column is full")
+    # Find lowest empty row (from bottom up)
+    for y in range(ROWS - 1, -1, -1):
+        if board[y][col] == 0:
+            board[y][col] = player
+            return (col, y)
+    # Shouldn't reach here due to the top check
+    raise ValueError("No space in column")
+
+def valid_columns(board):
+    """Return list of column indices that are playable."""
+    valid = []
+    for x in range(COLS):
+        if board[0][x] == 0:
+            valid.append(x)
+    return valid
+
+def in_bounds(x, y):
+    """Return if given x and y are possible."""
+    return 0 <= x < COLS and 0 <= y < ROWS
+
+def check_win(board, last_move):
+    """Check win that includes the last move using 4 directions and bounds checks."""
+    if last_move is None:
+        return False
+    x0, y0 = last_move
+    player = board[y0][x0]
+    if player == 0:
         return False
 
-    def check_win(self, side):
-        """Called to check if a given side has won"""
-        ps = {(x, y) for y, row in enumerate(self.board)
-              for x, cell in enumerate(row) if cell == side}
-        return self.check_win_helper(ps)
+    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]  # right, down, diag-down-right, diag-up-right
+    for dx, dy in directions:
+        count = 1
+        # forward
+        x, y = x0 + dx, y0 + dy
+        while in_bounds(x, y) and board[y][x] == player:
+            count += 1
+            x += dx
+            y += dy
+        # backward
+        x, y = x0 - dx, y0 - dy
+        while in_bounds(x, y) and board[y][x] == player:
+            count += 1
+            x -= dx
+            y -= dy
+        if count >= 4:
+            return True
+    return False
 
-    def heuristic_helper(self, ps1, ps2, xy, direction):
-        """Checks the heuristic for a certain side and angle of line.
-        NEEDS TO BE CALLED BY: heuristic
-        """
-        x, y = xy
-        dx, dy = direction
+def heuristic_helper(board, xy, direction, player):
+    """
+    Score a run that starts at xy in the given direction for player,
+    without double-counting (we only score if the previous cell is not player's).
+    Blocking rules:
+      - both ends blocked -> 0
+      - one end blocked  -> half (here: lower base)
+      - both open        -> full base
+    """
+    opponent = 3 - player
+    x, y = xy
+    dx, dy = direction
 
-        def is_blocked(coord):
-            cx, cy = coord
-            if not (0 <= cx < 7 and 0 <= cy < 6):
-                return True  # Out of range
-            return coord in ps2  # Blocked if opponent piece
+    def is_blocked(cx, cy):
+        if not in_bounds(cx, cy):
+            return True
+        return board[cy][cx] == opponent
 
-        value = 0
-        prev = (x - dx, y - dy)
+    # Avoid double counting: only score if previous cell in line is NOT player's
+    prevx, prevy = x - dx, y - dy
+    if in_bounds(prevx, prevy) and board[prevy][prevx] == player:
+        return 0
 
-        if prev not in ps1:  # Skip if already checked
-            for i in range(1, 4):
-                new = (x + i * dx, y + i * dy)
-                if new not in ps1:
-                    if is_blocked(new) and is_blocked(prev):
-                        value = 0
-                    elif is_blocked(new) or is_blocked(prev):
-                        value //= 2
-                    elif new in self.valid_concrete_moves() and prev in self.valid_concrete_moves():
-                        if value == 4:
-                            value = float("inf")
-                        else:
-                            value *= 3
-                    elif new in self.valid_concrete_moves() or prev in self.valid_concrete_moves():
-                        value *= 2
-                value += 2
-        return value
-
-    def heuristic(self):
-        """Calculates heuristic value for a side in a position"""
-        ps1 = {(x, y) for y, row in enumerate(self.board)
-               for x, cell in enumerate(row) if cell == 1}
-        ps2 = {(x, y) for y, row in enumerate(self.board)
-               for x, cell in enumerate(row) if cell == 2}
-
-        if self.check_win_helper(ps1):
-            return float("inf")
-        if self.check_win_helper(ps2):
-            return float("-inf")
-
-        heuristic_value = 0
-        directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
-
-        for x, y in ps1:
-            heuristic_value += sum(
-                self.heuristic_helper(ps1, ps2, (x, y),  d) for d in directions
-            )
-
-        for x, y in ps2:
-            heuristic_value -= sum(
-                self.heuristic_helper(ps2, ps1, (x, y), d) for d in directions
-            )
-
-        return heuristic_value
-
-
-def play_game():
-    """ Used to play a game to test how class ConnectFour works"""
-    game1 = ConnectFour()
-    side = 2  # Setup bool to determine whose turn
-
-    while not game1.check_win(1) and not game1.check_win(2):  # Game loop
-        move = None
-        side = side % 2 + 1
-        invalid_move = False
-        if not game1.valid_moves():
+    # Count consecutive player's pieces forward (including (x,y))
+    count = 1
+    for i in range(1, 4):
+        nx, ny = x + i*dx, y + i*dy
+        if not in_bounds(nx, ny):
             break
-        game1.print_board()
-        print("Valid moves: ", end="")
-        print(*game1.valid_moves(), sep=", ")
-        while move not in game1.valid_moves():
-            if invalid_move:
-                move = input("Invalid move! Choose another move: ")
-            else:
-                print(f"Player {side}'s turn")
-                move = input("Make a move: ")
-            try:
-                move = int(move)
-            except ValueError:
-                invalid_move = True
-                continue
-            invalid_move = True
-        game1.make_move(move)
+        if board[ny][nx] == player:
+            count += 1
+        else:
+            break
 
-    if game1.check_win(1):
-        game1.print_board()
-        print("Player 1 won!")
-    elif game1.check_win(2):
-        game1.print_board()
-        print("Player 2 won!")
+    # Determine blocking at both ends of the run
+    back_blocked = is_blocked(prevx, prevy)
+    endx, endy = x + count*dx, y + count*dy
+    fwd_blocked  = is_blocked(endx, endy)
+
+    if back_blocked and fwd_blocked:
+        return 0
+
+    if back_blocked or fwd_blocked:
+        if count == 1:
+            base = 0
+        elif count == 2:
+            base = 2     # semi-open 2
+        else:
+            base = 20    # semi-open 3
     else:
-        game1.print_board()
-        print("Game Tied")
+        if count == 1:
+            base = 0
+        elif count == 2:
+            base = 10    # open 2
+        elif count == 3:
+            base = 50   # open 3
+        else:
+            base = 0
+    return base
+
+def heuristic(board):
+    """Calculates heuristic value for the position."""
+    heuristic_table = [
+        [3, 4, 5,  7, 5, 4, 3],
+        [4, 6, 8, 10, 8, 6, 4],
+        [5, 8,11, 13,11, 8, 5],
+        [5, 8,11, 13,11, 8, 5],
+        [4, 6, 8, 10, 8, 6, 4],
+        [3, 4, 5,  7, 5, 4, 3],
+    ]
+
+    score = 0
+    directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
+    for y, row in enumerate(board):
+        for x, cell in enumerate(row):
+            if cell == 1:
+                # runs
+                score += sum(heuristic_helper(board, (x, y), d, 1) for d in directions)
+                score += heuristic_table[y][x]
+
+            elif cell == 2:
+                score -= sum(heuristic_helper(board, (x, y), d, 2) for d in directions)
+                score -= heuristic_table[y][x]
+    return score
+
+def clone_board(board):
+    return [row[:] for row in board]
+
+def minimax(board, depth, alpha, beta, maximizing, last_move=None):
+    """
+    Returns (score, move) -> move is a column index or None.
+    Terminal cases:
+      - win (from last_move) -> heuristic(board, last_move)
+      - no valid moves       -> 0 (draw)
+      - depth == 0           -> heuristic(board, last_move)
+    """
+
+    if last_move is not None and check_win(board, last_move):
+        winner = board[last_move[1]][last_move[0]]
+        if winner == 1:
+            return 100000 + depth, None # add depth to choose the fastest win
+        else:
+            return -100000 - depth, None
+
+    if depth == 0:
+        return heuristic(board), None
+    check_order = [3, 2, 4, 1, 5, 0, 6] # checking from middle gives a better chance to save time by pruning
+    valid_moves = [col for col in check_order if board[0][col] == 0]
+    if not valid_moves:
+        return 0, None
+    # maximizing player
+    if maximizing:
+        best_eval = float("-inf")
+        best_move = None
+        for col in valid_moves:
+            new_board = clone_board(board)
+            last_move = make_move(new_board, col, 1)
+            child_eval, _ = minimax(new_board, depth - 1, alpha, beta, False, last_move)
+            if child_eval > best_eval:
+                best_eval, best_move = child_eval, col
+                alpha = max(alpha, best_eval) # only check when best move is changed
+            if beta <= alpha:
+                break
+        return best_eval, best_move
+    # minimizing player
+    best_eval = float("inf")
+    best_move = None
+    for col in valid_moves:
+        new_board = clone_board(board)
+        last_move = make_move(new_board, col, 2)
+        child_eval, _ = minimax(new_board, depth - 1, alpha, beta, True, last_move)
+        if child_eval < best_eval:
+            best_eval, best_move = child_eval, col
+            beta = min(beta, best_eval)
+        if beta <= alpha:
+            break
+    return best_eval, best_move

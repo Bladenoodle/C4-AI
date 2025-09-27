@@ -208,7 +208,3 @@ __marimo__/
 
 #macOS system
 .DS_Store
-
-# Project
-checkpoint.py
-testing.py
