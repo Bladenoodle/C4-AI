@@ -1,24 +1,27 @@
-"""Module providing a connect four game and minimax algorithm solving it"""
+"""Module providing a connect four game and minimax algorithm solving it."""
 
 ROWS, COLS = 6, 7
 
 def create_board():
+    """Return a new empty 6x7 Connect Four board as a 2D list filled with 0."""
     return [[0 for _ in range(COLS)] for _ in range(ROWS)]
 
 def check_draw(board):
-    return True if valid_columns(board) is None else False
+    """Return True if no more valid moves are available (board is full)."""
+    return len(valid_columns(board)) == 0
+
 
 def print_board(board):
     """
-    Pretty prints the current board.
-    If a player has won, outlines the winning 4.
+    Pretty-print the current board state.
+    If a player has won, highlight the winning 4-in-a-row in brackets.
     """
     print()
 
     win_coords = set()
     for player in [1, 2]:
         ps = {(x, y) for y, row in enumerate(board)
-            for x, cell in enumerate(row) if cell == player}
+              for x, cell in enumerate(row) if cell == player}
         for x, y in ps:
             win_patterns = [
                 [(1, 1), (2, 2), (3, 3)],
@@ -53,7 +56,7 @@ def print_board(board):
     print()
 
 def cell_repr(cell):
-    """Helper to visualize a cell: 0=empty, 1=player, 2=opponent."""
+    """Return a printable representation of a board cell: 0=' ', 1='X', 2='O'."""
     if cell == 0:
         return " "
     if cell == 1:
@@ -61,8 +64,12 @@ def cell_repr(cell):
     return "O"
 
 def make_move(board, col, player):
-    """Drop a piece into column "col". Returns (x, y) in board indices (top-left origin)."""
-    if not (0 <= col < COLS):
+    """
+    Drop a piece into column `col` for `player`.
+    Returns the (x, y) coordinates of the placed piece.
+    Raises ValueError if column is invalid or full.
+    """
+    if not 0 <= col < COLS:
         raise ValueError("Column out of range")
     if board[0][col] != 0:
         raise ValueError("Column is full")
@@ -71,23 +78,24 @@ def make_move(board, col, player):
         if board[y][col] == 0:
             board[y][col] = player
             return (col, y)
-    # Shouldn't reach here due to the top check
     raise ValueError("No space in column")
 
+
 def valid_columns(board):
-    """Return list of column indices that are playable."""
-    valid = []
-    for x in range(COLS):
-        if board[0][x] == 0:
-            valid.append(x)
-    return valid
+    """Return a list of playable column indices."""
+    return [x for x in range(COLS) if board[0][x] == 0]
+
 
 def in_bounds(x, y):
-    """Return if given x and y are possible."""
+    """Return True if coordinates (x, y) are within the board."""
     return 0 <= x < COLS and 0 <= y < ROWS
 
+
 def check_win(board, last_move):
-    """Check win that includes the last move using 4 directions and bounds checks."""
+    """
+    Return True if "last_move" (x, y) resulted in a win.
+    Checks horizontal, vertical, and diagonal 4-in-a-rows.
+    """
     if last_move is None:
         return False
     x0, y0 = last_move
@@ -95,7 +103,7 @@ def check_win(board, last_move):
     if player == 0:
         return False
 
-    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]  # right, down, diag-down-right, diag-up-right
+    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
     for dx, dy in directions:
         count = 1
         # forward
@@ -116,73 +124,66 @@ def check_win(board, last_move):
 
 def heuristic_helper(board, xy, direction, player):
     """
-    Score a run that starts at xy in the given direction for player,
-    without double-counting (we only score if the previous cell is not player's).
-    Blocking rules:
-      - both ends blocked -> 0
-      - one end blocked  -> half (here: lower base)
-      - both open        -> full base
+    Score a line segment starting at xy in given direction for player.
+    Avoids double-counting by only scoring if previous cell is not player's.
+    Rules:
+      - Both ends blocked → 0
+      - One end blocked   → lower base value
+      - Both ends open    → higher base value
     """
     opponent = 3 - player
     x, y = xy
     dx, dy = direction
 
     def is_blocked(cx, cy):
-        if not in_bounds(cx, cy):
-            return True
-        return board[cy][cx] == opponent
+        return not in_bounds(cx, cy) or board[cy][cx] == opponent
 
-    # Avoid double counting: only score if previous cell in line is NOT player's
+    # Avoid double counting
     prevx, prevy = x - dx, y - dy
     if in_bounds(prevx, prevy) and board[prevy][prevx] == player:
         return 0
 
-    # Count consecutive player's pieces forward (including (x,y))
+    # Count consecutive player's pieces
     count = 1
     for i in range(1, 4):
-        nx, ny = x + i*dx, y + i*dy
-        if not in_bounds(nx, ny):
+        nx, ny = x + i * dx, y + i * dy
+        if not in_bounds(nx, ny) or board[ny][nx] != player:
             break
-        if board[ny][nx] == player:
-            count += 1
-        else:
-            break
+        count += 1
 
-    # Determine blocking at both ends of the run
+    # Blocking check
     back_blocked = is_blocked(prevx, prevy)
-    endx, endy = x + count*dx, y + count*dy
-    fwd_blocked  = is_blocked(endx, endy)
+    endx, endy = x + count * dx, y + count * dy
+    fwd_blocked = is_blocked(endx, endy)
 
     if back_blocked and fwd_blocked:
         return 0
-
     if back_blocked or fwd_blocked:
-        if count == 1:
-            base = 0
-        elif count == 2:
-            base = 2     # semi-open 2
-        else:
-            base = 20    # semi-open 3
-    else:
-        if count == 1:
-            base = 0
-        elif count == 2:
-            base = 10    # open 2
-        elif count == 3:
-            base = 50   # open 3
-        else:
-            base = 0
-    return base
+        if count == 2:
+            return 2
+        if count == 3:
+            return 10
+        return 0
+    if count == 2:
+        return 20
+    if count == 3:
+        return 100
+    return 0
+
 
 def heuristic(board):
-    """Calculates heuristic value for the position."""
+    """
+    Calculate heuristic score of board.
+    Positive = good for Player 1 (X), negative = good for Player 2 (O).
+    Combines positional table values and run-based values.
+    """
     heuristic_table = [
-        [3, 4, 5,  7, 5, 4, 3],
+        [3, 4, 5, 7, 5, 4, 3],
         [4, 6, 8, 10, 8, 6, 4],
-        [5, 8,11, 13,11, 8, 5],
-        [5, 8,11, 13,11, 8, 5],
+        [5, 8, 11, 13, 11, 8, 5],
+        [5, 8, 11, 13, 11, 8, 5],
         [4, 6, 8, 10, 8, 6, 4],
-        [3, 4, 5,  7, 5, 4, 3],
+        [3, 4, 5, 7, 5, 4, 3],
     ]
 
     score = 0
@@ -190,64 +191,66 @@ def heuristic(board):
     for y, row in enumerate(board):
         for x, cell in enumerate(row):
             if cell == 1:
-                # runs
                 score += sum(heuristic_helper(board, (x, y), d, 1) for d in directions)
                 score += heuristic_table[y][x]
-
             elif cell == 2:
                 score -= sum(heuristic_helper(board, (x, y), d, 2) for d in directions)
                 score -= heuristic_table[y][x]
     return score
 
+
 def clone_board(board):
+    """Return a deep copy of the board."""
     return [row[:] for row in board]
 
-def minimax(board, depth, alpha, beta, maximizing, last_move=None):
-    """
-    Returns (score, move) -> move is a column index or None.
-    Terminal cases:
-      - win (from last_move) -> heuristic(board, last_move)
-      - no valid moves       -> 0 (draw)
-      - depth == 0           -> heuristic(board, last_move)
-    """
 
+def minimax(board, depth, alpha, beta, maximizing, memory, last_move=None):
+    """
+    Minimax with alpha-beta pruning and transposition table.
+    Returns (score, move).
+    """
+    str_board = str(board)
     if last_move is not None and check_win(board, last_move):
         winner = board[last_move[1]][last_move[0]]
-        if winner == 1:
-            return 100000 + depth, None # add depth to choose the fastest win
-        else:
-            return -100000 - depth, None
+        return (100000 + depth, None) if winner == 1 else (-100000 - depth, None)
 
     if depth == 0:
         return heuristic(board), None
-    check_order = [3, 2, 4, 1, 5, 0, 6] # checking from middle gives a better chance to save time by pruning
+
+    check_order = [3, 2, 4, 1, 5, 0, 6]  # center-first ordering
     valid_moves = [col for col in check_order if board[0][col] == 0]
     if not valid_moves:
         return 0, None
-    # maximizing player
+
+    if str_board in memory:
+        _, prev_best = memory[str_board]
+        if prev_best in valid_moves:
+            valid_moves.remove(prev_best)
+            valid_moves.insert(0, prev_best)
+
     if maximizing:
-        best_eval = float("-inf")
-        best_move = None
+        best_eval, best_move = float("-inf"), None
         for col in valid_moves:
             new_board = clone_board(board)
-            last_move = make_move(new_board, col, 1)
-            child_eval, _ = minimax(new_board, depth - 1, alpha, beta, False, last_move)
+            new_last = make_move(new_board, col, 1)
+            child_eval, _ = minimax(new_board, depth - 1, alpha, beta, False, memory, new_last)
             if child_eval > best_eval:
                 best_eval, best_move = child_eval, col
-                alpha = max(alpha, best_eval) # only check when best move is changed
+                alpha = max(alpha, best_eval)
             if beta <= alpha:
                 break
+        memory[str_board] = (best_eval, best_move)
         return best_eval, best_move
-    # minimizing player
-    best_eval = float("inf")
-    best_move = None
+
+    best_eval, best_move = float("inf"), None
     for col in valid_moves:
         new_board = clone_board(board)
-        last_move = make_move(new_board, col, 2)
-        child_eval, _ = minimax(new_board, depth - 1, alpha, beta, True, last_move)
+        new_last = make_move(new_board, col, 2)
+        child_eval, _ = minimax(new_board, depth - 1, alpha, beta, True, memory, new_last)
         if child_eval < best_eval:
             best_eval, best_move = child_eval, col
             beta = min(beta, best_eval)
         if beta <= alpha:
             break
+    memory[str_board] = (best_eval, best_move)
     return best_eval, best_move
