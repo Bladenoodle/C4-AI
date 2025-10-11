@@ -128,3 +128,5 @@ Poetry run invoke E2E
 ```
 Poetry run invoke accuracy
 ```
+
+More details about testing in [testing document](https://github.com/Bladenoodle/C4-AI/blob/main/Documentations/Testing%20Ducoment.md).
