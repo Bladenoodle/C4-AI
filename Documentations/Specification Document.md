@@ -16,6 +16,7 @@ The theoretical time complexity for alpha beta pruned algorithm is O(b^(d/2). Th
 
 The purpose  of the course is for me to learn how to make a proper AI using minimax algoriyhm and alpha beta pruning and possibly other algorithms I need to learn along the way. **My question at the moment of writing this SD is what factors determine the effectiveness of the program. I will update on this when I think I have an answer!**
 
+Programme: TKT
 Sources:
 - https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
 - https://indiaai.gov.in/article/understanding-the-minmax-algorithm-in-ai
