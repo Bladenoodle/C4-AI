@@ -25,6 +25,7 @@ def iterative_deepening(board, cal_time, maximizing, last_move):
         )
         if abs(best_eval) >= 100000:
             break
+    print(f"calculation time: {(time.time() - start_time):.2f} seconds")
     return (best_eval, best_move), depth
 
 
@@ -101,7 +102,7 @@ def main():
 
         while choice == "play":
             first = input("Play first? (y/n): ").strip().lower()
-            cal_time = int(input("Choose enemy calculation time: "))
+            cal_time = float(input("Choose enemy calculation time: "))
             if first == "y":
                 play_game(1, cal_time)
                 choice = None
@@ -113,8 +114,8 @@ def main():
 
         while choice == "watch":
             board = create_board()
-            cal_time1 = int(input("Choose player 1 calculation time: "))
-            cal_time2 = int(input("Choose player 2 calculation time: "))
+            cal_time1 = float(input("Choose player 1 calculation time: "))
+            cal_time2 = float(input("Choose player 2 calculation time: "))
             last_move = None
 
             for i in range(22):

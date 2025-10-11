@@ -21,3 +21,11 @@ def test_iterative_deepening_detects_win_immediately():
         make_move(board, i, 1)
     result, _ = iterative_deepening(board, 1, True, (3, 5))
     assert result == (None, None)
+
+def test_iterative_deepening_detects_win_in_one():
+    """Check that finds win in one"""
+    board = create_board()
+    for i in range(3):
+        make_move(board, i, 1)
+    result, _ = iterative_deepening(board, 1, True, (2, 5))
+    assert result[0] == 100000
