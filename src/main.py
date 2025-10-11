@@ -1,8 +1,10 @@
 """Main program for playing and testing Connect 4 minimax with iterative deepening."""
 
 import time
-from connect_4 import make_move, print_board, check_win, minimax, create_board, check_draw
-
+from connect_4 import(
+    make_move, print_board, check_win, minimax,
+    create_board, check_draw
+)
 
 def iterative_deepening(board, cal_time, maximizing, last_move):
     """
@@ -11,7 +13,7 @@ def iterative_deepening(board, cal_time, maximizing, last_move):
     """
     start_time = time.time()
     if check_win(board, last_move):
-        return None, None
+        return (None, None), None
     memory = {}
     depth = 0
     best_eval, best_move = 0, None
@@ -34,7 +36,7 @@ def play_game(side, cal_time):
     """
     board = create_board()
     last_move = None
-    for i in range(25):
+    for i in range(22):
         if side == 1:
             best_move = int(input("Make a move: ")) - 1
             last_move = make_move(board, best_move, 1)
@@ -46,7 +48,7 @@ def play_game(side, cal_time):
                 print("Game drawn")
                 break
 
-            best, cal_depth = iterative_deepening(board, cal_time, True, last_move)
+            best, cal_depth = iterative_deepening(board, cal_time, False, last_move)
             best_eval, best_move = best
             last_move = make_move(board, best_move, 2)
             print(f"Player 2 calculates with a depth of {cal_depth} "
@@ -94,7 +96,7 @@ def main():
     print("Welcome to Connect 4")
     while choice != "exit":
         print("Play against bot (play)")
-        print("Setup a position for bots to play (watch)")
+        print("Watch bots play (watch)")
         choice = input("Choose a mode (play/watch/exit): ").strip().lower()
 
         while choice == "play":
@@ -110,19 +112,12 @@ def main():
                 time.sleep(1)
 
         while choice == "watch":
-            pos = input("Insert a position of size 7x6 (or type 'empty'): ")
-            if pos.strip().lower() == "empty":
-                board = create_board()
-            else:
-                raise NotImplementedError(
-                    "Parsing custom board from string not yet implemented"
-                )
-
+            board = create_board()
             cal_time1 = int(input("Choose player 1 calculation time: "))
             cal_time2 = int(input("Choose player 2 calculation time: "))
-
             last_move = None
-            for i in range(25):
+
+            for i in range(22):
                 best, cal_depth = iterative_deepening(board, cal_time1, True, last_move)
                 best_eval, best_move = best
                 last_move = make_move(board, best_move, 1)

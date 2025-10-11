@@ -208,7 +208,3 @@ __marimo__/
 
 #macOS system
 .DS_Store
-
-#poetry
-poetry.lock
-pyproject.toml
