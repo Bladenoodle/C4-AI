@@ -1,80 +1,45 @@
-Test 1:
-The first test with the progress of week 3, that is having alpha beta pruning.
-The algorithm is interestingly inefficient. When it calculates a win, it doesn't go for the shortest path to the win. It will secure a win when its the only move, but when thats not the case it might take a long path to victory. I believe this is because in its program, if it has many moves that are equally good, it's programmed to choose the first discovered one. Win in 5 or win in 1 is equally good in its "eyes", so it is up to luck, which one it sees first. This will be fixed by next week.
+## Unit testing
 
-Conclution: The algorithm finds solutions up to win in 4, but it doesn't prioritize the shortest path to winning.
+### test_c4.py
+- test_make_move tests that after making a move to col 4, the function make_move makes the correct move for the correct side and returns the correct last move.
 
-Week 3 testing:
-10 Testing with different puzzles, and it can solve every win in 4, can't solve any win in 5.
+- test_make_move_invalid_column_raises tests that when trying to make a move that is outside of the board, the function make_move raises a value error.
 
-The criterion to did it find a solution or not is by printing out its evaluation of the position. If the position is "inf", it has already solved it. Puzzles used for testing is from:
-https://sites.math.rutgers.edu/~zeilberg/C4/ch4/P10.html
+- test_make_move_full_column_raises tests that when trying to make a move to a full column, the function make_move raises a value error.
 
-Example of win in 4 puzzle:
-Puzzle (Chapter IV -- problem 10):
-   1   2   3   4   5   6   7 
- +---+---+---+---+---+---+---+
- |   |   |   |   |   |   |   |
- +---+---+---+---+---+---+---+
- |   |   |   |   |   |   |   |
- +---+---+---+---+---+---+---+
- |   |   | X |   |   | X | X |
- +---+---+---+---+---+---+---+
- | O |   | X |   | X | O | O |
- +---+---+---+---+---+---+---+
- | O |   | O |   | X | O | O |
- +---+---+---+---+---+---+---+
- | X |   | O |   | O | X | X |
- +---+---+---+---+---+---+---+
-Code:
-##############################################
-from connect_4 import ConnectFour
-from main import minimax
+- test_check_win_horizontal tests that four consecutive moves horizontally by the same side correctly trigger a win condition.
 
-win_in_two = [
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0, 1, 1],
-    [2, 0, 1, 0, 1, 2, 2],
-    [2, 0, 2, 0, 1, 2, 2],
-    [1, 0, 2, 0, 2, 1, 1],
-]
+- test_check_win_vertical tests that four consecutive moves vertically by the same side correctly trigger a win condition.
 
-game = ConnectFour(board=win_in_two)
+- test_check_draw_true_when_full tests that when all cells are filled, the function check_draw correctly identifies a draw.
 
-for i in range(25):
-    game.make_move(minimax(game, 7, True))
-    game.print_board()
-    if game.check_win(1):
-        print(f"1 Won on round {i}")
-        break
+- test_heuristic_favors_center tests that the heuristic function gives a higher value for center columns, ensuring positional preference.
 
-    game.make_move(minimax(game, 6, False))
-    game.print_board()
-    if game.check_win(2):
-        print(f"2 Won on round {i}")
-        break
-##############################################
+- test_heuristic_value tests that heuristic values are positive when player 1 is favored and negative when player 2 is favored.
 
-Output (inf:
-##############################################
+- test_minimax_win_self tests that the minimax algorithm can correctly detect a winning move for itself within one turn.
 
-Evaluation: inf
+- test_minimax_win_opponent tests that the minimax algorithm can correctly detect a winning move for the opponent within one turn.
 
-   1   2   3   4   5   6   7 
- +---+---+---+---+---+---+---+
- |   |   |   |   |   |   |   |
- +---+---+---+---+---+---+---+
- |   |   |   |   |   |   | X |
- +---+---+---+---+---+---+---+
- |   |   | X |   |   | X | X |
- +---+---+---+---+---+---+---+
- | O |   | X |   | X | O | O |
- +---+---+---+---+---+---+---+
- | O |   | O |   | X | O | O |
- +---+---+---+---+---+---+---+
- | X |   | O |   | O | X | X |
- +---+---+---+---+---+---+---+
+- test_minimax_return_when_depth_0 tests that the minimax function correctly returns a None move when the search depth is zero.
 
-##############################################
+### test_main.py
+- test_iterative_deepening_stops_in_time tests that the iterative_deepening function respects the given time limit and completes in under one second for a 0.5 second limit.
 
+- test_iterative_deepening_detects_win_immediately tests that iterative_deepening exits immediately when the game has already been won before search begins.
+
+### Coverage
+<img width="623" height="185" alt="image" src="https://github.com/user-attachments/assets/446dff22-b111-4f40-acf1-2a393f078f45" />
+
+The lines 19-56 and 60-64 that weren't tested in connect_4.py are UI functionalities.
+The the lines that weren't tested in main.py are all I/O functionalities.
+
+## Advanced testing
+### test_E2E.py
+test_end_to_end runs a full simulated game between two AIs using iterative_deepening with random time limits within 0.1 seconds and 1 second. It ensures that both AIs always make valid moves and that the game terminates correctly within 42 moves (the full board).
+
+### test_puzzles.py
+test_depth_calculation tests that minimax correctly identifies a forced win in 5 moves (depth 9) for a set of predefined puzzle states. It verifies that minimax returns the expected maximum heuristic value of 100,000, confirming correct depth calculation and win detection.
+
+## Manual testing
+The manual testings using command python src/main.py and playing against the AI myself, with itself and with a perfect connect 4 solver, I found that the AI is consistantly winning me, inconsistantly winning itself depending on depth, and almost always losing to a perfect solver, even in a theretical win state (starts first). This is most likely due to a poor heuristic function.
