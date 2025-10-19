@@ -66,3 +66,5 @@ The integration testings can be done using command:
 poetry run python main.py
 ```
 After which user can test it by playing agaist it or watching two AI play.
+
+More instructions on how to run the testings in [user instructions](https://github.com/Bladenoodle/C4-AI/blob/main/Documentations/User%20Instructions.md).
