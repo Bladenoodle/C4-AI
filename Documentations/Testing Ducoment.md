@@ -27,6 +27,8 @@
 - test_iterative_deepening_stops_in_time tests that the iterative_deepening function respects the given time limit and completes in under one second for a 0.5 second limit.
 
 - test_iterative_deepening_detects_win_immediately tests that iterative_deepening exits immediately when the game has already been won before search begins.
+  
+- test_iterative_deepening_detects_win_in_one tests that iterative_deepening exits immediately when it finds a guaranteed win with a win in one position.
 
 ### Coverage
 <img width="623" height="185" alt="image" src="https://github.com/user-attachments/assets/446dff22-b111-4f40-acf1-2a393f078f45" />
