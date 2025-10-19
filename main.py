@@ -1,10 +1,64 @@
 """Main program for playing and testing Connect 4 minimax with iterative deepening."""
 
 import time
-from connect_4 import(
-    make_move, print_board, check_win, minimax,
+from src.connect_4 import(
+    make_move, check_win, minimax,
     create_board, check_draw
 )
+
+def print_board(board):
+    """
+    Pretty-print the current board state.
+    If a player has won, highlight the winning 4-in-a-row in brackets.
+    """
+    print()
+
+    win_coords = set()
+    for player in [1, 2]:
+        ps = {(x, y) for y, row in enumerate(board)
+              for x, cell in enumerate(row) if cell == player}
+        for x, y in ps:
+            win_patterns = [
+                [(1, 1), (2, 2), (3, 3)],
+                [(1, 0), (2, 0), (3, 0)],
+                [(0, 1), (0, 2), (0, 3)],
+                [(-1, 1), (-2, 2), (-3, 3)]
+            ]
+            for pattern in win_patterns:
+                coords = [(x + dx, y + dy) for dx, dy in pattern]
+                if all(c in ps for c in coords):
+                    win_coords = set([(x, y)] + coords)
+                    break
+            if win_coords:
+                break
+        if win_coords:
+            break
+
+    print("  " + " ".join(f" {i+1} " for i in range(len(board[0]))))
+    print(" +" + "---+" * len(board[0]))
+
+    for y, row in enumerate(board):
+        row_str = " |"
+        for x, cell in enumerate(row):
+            cell_char = cell_repr(cell)
+            if (x, y) in win_coords:
+                cell_char = f"[{cell_char}]"
+            else:
+                cell_char = f" {cell_char} "
+            row_str += cell_char + "|"
+        print(row_str)
+        print(" +" + "---+" * len(board[0]))
+    print()
+
+
+def cell_repr(cell):
+    """Return a printable representation of a board cell: 0=' ', 1='X', 2='O'."""
+    if cell == 0:
+        return " "
+    if cell == 1:
+        return "X"
+    return "O"
+
 
 def iterative_deepening(board, cal_time, maximizing, last_move):
     """
@@ -27,6 +81,7 @@ def iterative_deepening(board, cal_time, maximizing, last_move):
             break
     print(f"calculation time: {(time.time() - start_time):.2f} seconds")
     return (best_eval, best_move), depth
+
 
 
 def play_game(side, cal_time):

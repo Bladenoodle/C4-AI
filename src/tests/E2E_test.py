@@ -1,8 +1,7 @@
 """Module for testing a full game played by AIs"""
 
 from random import uniform
-from main import iterative_deepening
-from connect_4 import create_board, make_move, check_win, check_draw
+from connect_4 import create_board, make_move, check_win, check_draw, iterative_deepening
 
 
 def test_end_to_end():

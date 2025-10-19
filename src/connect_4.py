@@ -1,67 +1,18 @@
 """Module providing a connect four game and minimax algorithm solving it."""
 
+import time
+
 ROWS, COLS = 6, 7
 
 def create_board():
     """Return a new empty 6x7 Connect Four board as a 2D list filled with 0."""
     return [[0 for _ in range(COLS)] for _ in range(ROWS)]
 
+
 def check_draw(board):
     """Return True if no more valid moves are available (board is full)."""
     return len(valid_columns(board)) == 0
 
-
-def print_board(board):
-    """
-    Pretty-print the current board state.
-    If a player has won, highlight the winning 4-in-a-row in brackets.
-    """
-    print()
-
-    win_coords = set()
-    for player in [1, 2]:
-        ps = {(x, y) for y, row in enumerate(board)
-              for x, cell in enumerate(row) if cell == player}
-        for x, y in ps:
-            win_patterns = [
-                [(1, 1), (2, 2), (3, 3)],
-                [(1, 0), (2, 0), (3, 0)],
-                [(0, 1), (0, 2), (0, 3)],
-                [(-1, 1), (-2, 2), (-3, 3)]
-            ]
-            for pattern in win_patterns:
-                coords = [(x + dx, y + dy) for dx, dy in pattern]
-                if all(c in ps for c in coords):
-                    win_coords = set([(x, y)] + coords)
-                    break
-            if win_coords:
-                break
-        if win_coords:
-            break
-
-    print("  " + " ".join(f" {i+1} " for i in range(len(board[0]))))
-    print(" +" + "---+" * len(board[0]))
-
-    for y, row in enumerate(board):
-        row_str = " |"
-        for x, cell in enumerate(row):
-            cell_char = cell_repr(cell)
-            if (x, y) in win_coords:
-                cell_char = f"[{cell_char}]"
-            else:
-                cell_char = f" {cell_char} "
-            row_str += cell_char + "|"
-        print(row_str)
-        print(" +" + "---+" * len(board[0]))
-    print()
-
-def cell_repr(cell):
-    """Return a printable representation of a board cell: 0=' ', 1='X', 2='O'."""
-    if cell == 0:
-        return " "
-    if cell == 1:
-        return "X"
-    return "O"
 
 def make_move(board, col, player):
     """
@@ -78,7 +29,6 @@ def make_move(board, col, player):
         if board[y][col] == 0:
             board[y][col] = player
             return (col, y)
-    raise ValueError("No space in column")
 
 
 def valid_columns(board):
@@ -100,8 +50,6 @@ def check_win(board, last_move):
         return False
     x0, y0 = last_move
     player = board[y0][x0]
-    if player == 0:
-        return False
 
     directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
     for dx, dy in directions:
@@ -122,7 +70,7 @@ def check_win(board, last_move):
             return True
     return False
 
-def heuristic_helper(board, xy, direction, player):
+def single_direction_heuristic(board, xy, direction, player):
     """
     Score a line segment starting at xy in given direction for player.
     Avoids double-counting by only scoring if previous cell is not player's.
@@ -191,10 +139,10 @@ def heuristic(board):
     for y, row in enumerate(board):
         for x, cell in enumerate(row):
             if cell == 1:
-                score += sum(heuristic_helper(board, (x, y), d, 1) for d in directions)
+                score += sum(single_direction_heuristic(board, (x, y), d, 1) for d in directions)
                 score += heuristic_table[y][x]
             elif cell == 2:
-                score -= sum(heuristic_helper(board, (x, y), d, 2) for d in directions)
+                score -= sum(single_direction_heuristic(board, (x, y), d, 2) for d in directions)
                 score -= heuristic_table[y][x]
     return score
 
@@ -214,13 +162,13 @@ def minimax(board, depth, alpha, beta, maximizing, memory, last_move=None):
         winner = board[last_move[1]][last_move[0]]
         return (100000 + depth, None) if winner == 1 else (-100000 - depth, None)
 
-    if depth == 0:
-        return heuristic(board), None
-
     check_order = [3, 2, 4, 1, 5, 0, 6]  # center-first ordering
     valid_moves = [col for col in check_order if board[0][col] == 0]
     if not valid_moves:
         return 0, None
+
+    if depth == 0:
+        return heuristic(board), None
 
     if str_board in memory:
         _, prev_best = memory[str_board]
@@ -254,3 +202,26 @@ def minimax(board, depth, alpha, beta, maximizing, memory, last_move=None):
             break
     memory[str_board] = (best_eval, best_move)
     return best_eval, best_move
+
+
+def iterative_deepening(board, cal_time, maximizing, last_move):
+    """
+    Function for calling minimax in a deepening search.
+    Minimax runs iteratively depth by depth until the given calculation time is reached.
+    """
+    start_time = time.time()
+    if check_win(board, last_move):
+        return (None, None), None
+    memory = {}
+    depth = 0
+    best_eval, best_move = 0, None
+    while time.time() - start_time < cal_time:
+        depth += 1
+        best_eval, best_move = minimax(
+            board, depth, float("-inf"), float("inf"),
+            maximizing, memory, last_move
+        )
+        if abs(best_eval) >= 100000:
+            break
+    print(f"calculation time: {(time.time() - start_time):.2f} seconds")
+    return (best_eval, best_move), depth
