@@ -5,21 +5,34 @@ This program implements a connect 4 game where you can either **play against a m
 The AI uses *iterative deepening*, *alpha–beta pruning*, and *move ordering* for efficient decision-making.
 
 ---
+## Installation
+
+This project uses **Poetry** for dependency management.  
+Make sure you have **Poetry ≥ 1.2** installed (older versions do not support the modern `[project]` table format in `pyproject.toml`).
+
+### 1. Install Poetry
+If you don’t have Poetry yet, install it with:
+
+```
+curl -sSL https://install.python-poetry.org | python3 -
+```
+Then verify your version to be ≥ 1.2 with:
+```
+poetry --version
+```
+If the version is too old, you can update with:
+```
+poetry self update
+```
+
+Lastly install Poetry dependencies with:
+```
+poetry install
+```
 
 ## How to Run the Program
 
-1. **Activate the virtual environment**
-
-   ```
-   poetry env activate
-   ```
-After which you will get an output similar to this:
-```
-source /Users/username/Library/Caches/pypoetry/virtualenvs/c4-ai-DIcPqecZ-py3.12/bin/activate
-```
-Copy paste this command to get into the virtual enviroment.
-
-2. **Choose what to do**
+**Choose what to do**
 
 Now you can either:
 - **Play the game** (main program)
@@ -30,7 +43,7 @@ Now you can either:
 ## Play
 Start the game with:
 ```
-poetry run python src/main.py
+poetry run python main.py
 ```
 
 After launch, you will see:
@@ -115,7 +128,7 @@ For simple unit testing:
 ```
 Poetry run invoke test
 ```
-For coverage testing:
+### Unit testing with coverage:
 ```
 Poetry run invoke coverage
 ```
@@ -124,9 +137,5 @@ Poetry run invoke coverage
 Poetry run invoke E2E
 ```
 
-### Accuracy testing
-```
-Poetry run invoke accuracy
-```
 
 More details about testing in [testing document](https://github.com/Bladenoodle/C4-AI/blob/main/Documentations/Testing%20Ducoment.md).
