@@ -200,13 +200,13 @@ def test_depth_calculation():
     [0, 1, 2, 0, 1, 1, 2]
 ]
 
-    assert 5 == minimax(board, 5, float("-inf"), float("inf"), True, {})[1]
+    assert 100002, 5 == minimax(board, 5, float("-inf"), float("inf"), True, {})
     make_move(board, 5, 1)
     make_move(board, 1, 2)
-    assert 3 == minimax(board, 5, float("-inf"), float("inf"), True, {})[1]
+    assert 100003, 3 == minimax(board, 5, float("-inf"), float("inf"), True, {})
     make_move(board, 3, 1)
     make_move(board, 3, 2)
-    assert 3 == minimax(board, 5, float("-inf"), float("inf"), True, {})[1]
+    assert 100004, 3 == minimax(board, 5, float("-inf"), float("inf"), True, {})
 
 # Minimax correctness
 
